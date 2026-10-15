@@ -10,9 +10,16 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 
 deploy_one() {
   local service="$1"
-  if ! gcloud run services describe "$service" --project="$project_id" --region="$region" >/dev/null 2>&1; then
-    return 0
+  local describe_err
+  if ! describe_err="$(gcloud run services describe "$service" --project="$project_id" --region="$region" 2>&1 >/dev/null)"; then
+    if [[ "$describe_err" == *"NOT_FOUND"* || "$describe_err" == *"Cannot find service"* ]]; then
+      echo "Skipping ${service}; it is not in ${project_id}."
+      return 0
+    fi
+    printf '%s\n' "$describe_err" >&2
+    return 1
   fi
+  echo "Deploying ${service} to ${project_id}."
   gcloud run deploy "$service" \
     --source="$root" \
     --project="$project_id" \
