@@ -5,7 +5,7 @@ ruby "3.3.3"
 gem "rails", "~> 8.0.4"
 # json 3.0 dropped the quirks_mode keyword Rails 8.0 still passes.
 gem "json", "~> 2.7"
-gem "pg", "~> 1.1"
+gem "pg", "~> 1.7"
 gem "puma", ">= 5.0"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "solid_cache"
