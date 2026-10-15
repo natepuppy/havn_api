@@ -1,0 +1,38 @@
+# Pushing master deploys production. Pushing staging deploys staging.
+name: Deploy
+
+on:
+  push:
+    branches: [master, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DEPLOY_ENV: ${{ github.ref_name == 'staging' && 'staging' || 'production' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: havn-api-${{ env.DEPLOY_ENV }}
+          workload_identity_provider: projects/669682764838/locations/global/workloadIdentityPools/github/providers/github
+          service_account: github-deploy@havn-api-${{ env.DEPLOY_ENV }}.iam.gserviceaccount.com
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: ./scripts/deploy-cloud-run.sh "$DEPLOY_ENV"
