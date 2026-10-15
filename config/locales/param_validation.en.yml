@@ -1,0 +1,15 @@
+en:
+  param_validation:
+    errors:
+      string_cannot_be_blank: "can't be blank"
+      email_format: "has invalid format"
+      phone_number_format: "must be in the format: (###) ###-####"
+      zip_code_format: "must be 5 digits"
+      datetime_format: "must be a valid date format YYYY-MM-DD"
+      recruiter_must_exist: "must be an existing recruiter"
+      documents_must_exist: "must reference active onboarding documents"
+      required_documents: "must include every required document"
+      market_name_taken: "has already been added"
+      market_must_exist: "must be an existing market"
+      level_must_be_known: "must be Rookie, Veteran, or Pro"
+      housing_must_be_known: "must be Single housing or Married housing"

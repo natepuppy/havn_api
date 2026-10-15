@@ -1,0 +1,12 @@
+Hi <%= @rep.first_name %>,
+
+Welcome to the team. <%= @recruiter.first_name %> <%= @recruiter.last_name %> recruited you, and your start date is <%= @rep.start_date&.strftime("%B %-d, %Y") %>.
+
+<%= @document.name %>
+<% if @document.description.present? %>
+<%= @document.description %>
+<% end %>
+
+<%= @document.body %>
+
+Reply to this email if you have questions before your first day.

@@ -1,0 +1,47 @@
+# Local development stack. Run with:
+#   docker compose -f docker-compose.dev.yml up --build
+name: pest-api-dev
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bash -c "bundle check || bundle install && ./bin/rails db:prepare && ./bin/rails db:seed && rm -f tmp/pids/server.pid && ./bin/rails server -b 0.0.0.0 -p 3000"
+    environment:
+      RAILS_ENV: development
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DEV_DEFAULT_PASSWORD: ${DEV_DEFAULT_PASSWORD:-pass123!!!}
+      DEVISE_JWT_SECRET_KEY: ${DEVISE_JWT_SECRET_KEY:-dev-pest-jwt-secret}
+      ACTIVE_JOB_ADAPTER: async
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+      - /rails/tmp/pids
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  bundle_cache:

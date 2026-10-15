@@ -1,0 +1,28 @@
+# Copy to production.tfvars. The real file is gitignored.
+#   terraform workspace select production
+#   terraform apply -var-file=environments/production.tfvars
+
+project_id   = "havn-api-production"
+region       = "us-central1"
+frontend_url = "https://havnpestcontrol.com"
+api_domain   = "api.havnpestcontrol.com"
+
+# Production keeps request handling and job processing in separate services.
+solid_queue_in_web     = false
+create_worker          = true
+worker_min_instances   = 1
+worker_cpu             = "1"
+worker_memory          = "1Gi"
+
+cpu           = "1"
+memory        = "2Gi"
+min_instances = 1
+max_instances = 3
+rails_max_threads = "5"
+
+db_tier                = "db-g1-small"
+db_disk_size           = 20
+db_deletion_protection = true
+db_pitr_enabled        = true
+db_backup_retention_days = 7
+db_max_connections     = 100

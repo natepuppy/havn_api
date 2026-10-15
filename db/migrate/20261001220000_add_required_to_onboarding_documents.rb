@@ -1,0 +1,7 @@
+# frozen_string_literal: true
+
+class AddRequiredToOnboardingDocuments < ActiveRecord::Migration[8.0]
+  def change
+    add_column :onboarding_documents, :required, :boolean, null: false, default: false
+  end
+end

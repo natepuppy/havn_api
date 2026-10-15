@@ -1,0 +1,23 @@
+# Copy to staging.tfvars. The real file is gitignored.
+#   terraform workspace select staging
+#   terraform apply -var-file=environments/staging.tfvars
+
+project_id   = "havn-api-staging"
+region       = "us-central1"
+frontend_url = "https://staging.havnpestcontrol.com"
+api_domain   = "staging-api.havnpestcontrol.com"
+
+# Staging runs jobs inside the web process so a second always-on service is not billed.
+solid_queue_in_web = true
+create_worker      = false
+
+cpu           = "1"
+memory        = "1Gi"
+min_instances = 0
+max_instances = 2
+
+db_tier                = "db-f1-micro"
+db_disk_size           = 10
+db_deletion_protection = false
+db_pitr_enabled        = false
+db_max_connections     = 50

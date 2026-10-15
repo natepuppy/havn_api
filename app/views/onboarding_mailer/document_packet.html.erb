@@ -1,0 +1,15 @@
+<p>Hi <%= @rep.first_name %>,</p>
+
+<p>
+  Welcome to the team. <%= @recruiter.first_name %> <%= @recruiter.last_name %>
+  recruited you, and your start date is <%= @rep.start_date&.strftime("%B %-d, %Y") %>.
+</p>
+
+<h2><%= @document.name %></h2>
+<% if @document.description.present? %>
+  <p><%= @document.description %></p>
+<% end %>
+
+<div style="white-space: pre-wrap;"><%= @document.body %></div>
+
+<p>Reply to this email if you have questions before your first day.</p>
