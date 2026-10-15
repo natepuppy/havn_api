@@ -22,7 +22,7 @@ jobs:
       DEPLOY_ENV: ${{ github.ref_name == 'staging' && 'staging' || 'production' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
