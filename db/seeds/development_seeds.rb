@@ -63,8 +63,12 @@ documents = [
   },
   {
     position: 2,
-    name: "Rep agreement",
-    description: "Role, territory, and conduct expectations.",
+    active: true,
+    send_by_default: true,
+    required: true,
+    docusign_template_id: "736474c4-34c8-4f48-a4a3-8727bd55a9ba",
+    name: "Rep Agreement",
+    description: "Sent to every rep. The level addendum is attached with it.",
     body: <<~BODY.strip,
       Representative agreement
 
@@ -114,6 +118,30 @@ documents = [
     BODY
   },
   {
+    position: 7,
+    level: "Rookie",
+    docusign_template_id: "bf7c1049-dc3c-4270-8f63-b0240473d8a8",
+    name: "Havn Rookie Addendum",
+    description: "Agreement sent to Rookie reps.",
+    body: "Sent through DocuSign when the rep's level is Rookie.",
+  },
+  {
+    position: 8,
+    level: "Veteran",
+    docusign_template_id: "3809bfb3-d00d-42bc-a829-7894284d0d23",
+    name: "Havn Veteran Addendum",
+    description: "Agreement sent to Veteran reps.",
+    body: "Sent through DocuSign when the rep's level is Veteran.",
+  },
+  {
+    position: 9,
+    level: "Pro",
+    docusign_template_id: "e8048ca0-1a5b-4cf7-bed9-6c5c0349eadb",
+    name: "Havn Pro Addendum",
+    description: "Agreement sent to Pro reps.",
+    body: "Sent through DocuSign when the rep's level is Pro.",
+  },
+  {
     position: 6,
     send_by_default: false,
     name: "Safety acknowledgment",
@@ -127,6 +155,11 @@ documents = [
     BODY
   },
 ]
+
+legacy_agreement = OnboardingDocument.find_by name: "Rep agreement"
+if legacy_agreement && OnboardingDocument.where(name: "Rep Agreement").none?
+  legacy_agreement.update! name: "Rep Agreement"
+end
 
 documents.each do |attrs|
   document = OnboardingDocument.find_or_initialize_by name: attrs[:name]
@@ -170,6 +203,8 @@ end
   next unless attrs[:status] == "docs_sent"
 
   OnboardingDocument.active.find_each do |document|
+    next unless document.for_level? rep.user&.level
+
     delivery = DocumentDelivery.find_or_initialize_by rep: rep, onboarding_document: document
     delivery.assign_attributes(
       recipient_email: rep.email,

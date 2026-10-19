@@ -26,7 +26,7 @@ class RepNormalizer < ::BaseResponseNormalizer
   )
 
   custom_attributes :full_name, :recruiter_name, :recruiter_email, :level, :housing,
-                     :role, :agreement_completed, :documents_sent_count, :deliveries
+                     :role, :agreement_completed, :agreement_signed, :documents_sent_count, :deliveries
 
   def full_name object
     object.full_name
@@ -41,7 +41,7 @@ class RepNormalizer < ::BaseResponseNormalizer
   end
 
   def level object
-    object.user&.level
+    object.level
   end
 
   def housing object
@@ -53,13 +53,21 @@ class RepNormalizer < ::BaseResponseNormalizer
   end
 
   def agreement_completed object
-    object.document_deliveries.to_a.any? do |delivery|
-      delivery.status == "sent" && delivery.onboarding_document&.name.to_s.match?(/agreement/i)
-    end
+    agreement_deliveries(object).any? { |delivery| DocumentDelivery::OUTBOUND_STATUSES.include?(delivery.status) }
+  end
+
+  def agreement_signed object
+    agreement_deliveries(object).any? { |delivery| delivery.status == "completed" }
   end
 
   def documents_sent_count object
-    object.document_deliveries.to_a.count { |delivery| delivery.status == "sent" }
+    object.document_deliveries.to_a.count { |delivery| DocumentDelivery::OUTBOUND_STATUSES.include?(delivery.status) }
+  end
+
+  def agreement_deliveries object
+    object.document_deliveries.to_a.select do |delivery|
+      delivery.onboarding_document&.agreement?
+    end
   end
 
   def deliveries object

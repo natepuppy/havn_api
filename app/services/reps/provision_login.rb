@@ -32,13 +32,16 @@ module Reps
         )
       else
         user.restore if user.deleted?
-        user.update!(
-          first_name: rep.first_name,
-          last_name:  rep.last_name,
-          phone:      rep.phone.presence || user.phone,
-          level:      level.presence || user.level,
-          housing:    housing.presence || user.housing,
-        )
+        owned_by_another_rep = Rep.where(user_id: user.id).where.not(id: rep.id).exists?
+        unless owned_by_another_rep
+          user.update!(
+            first_name: rep.first_name,
+            last_name:  rep.last_name,
+            phone:      rep.phone.presence || user.phone,
+            level:      level.presence || user.level,
+            housing:    housing.presence || user.housing,
+          )
+        end
       end
 
       rep.update! user: user if rep.user_id != user.id && !Rep.where(user_id: user.id).where.not(id: rep.id).exists?

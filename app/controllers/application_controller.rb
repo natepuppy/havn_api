@@ -21,7 +21,8 @@ class ApplicationController < ActionController::API
     request.path.start_with?("/jobs") ||
       request.path == "/up" ||
       request.path == "/users/sign_in" ||
-      request.path.start_with?("/users/password")
+      request.path.start_with?("/users/password") ||
+      request.path == "/docusign/webhooks"
   end
 
   def handle_authorized_action error

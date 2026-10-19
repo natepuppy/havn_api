@@ -90,7 +90,10 @@ production:
     database: pest_api_production
     username: <%= ENV.fetch("PEST_API_DATABASE_USERNAME", "pest_api") %>
     password: <%= ENV["PEST_API_DATABASE_PASSWORD"] %>
-    <% if ENV["INSTANCE_UNIX_SOCKET"].present? %>
+    <% if ENV["PEST_API_DATABASE_HOST"].present? %>
+    host: <%= ENV["PEST_API_DATABASE_HOST"] %>
+    port: <%= ENV.fetch("PEST_API_DATABASE_PORT", 5432) %>
+    <% elsif ENV["INSTANCE_UNIX_SOCKET"].present? %>
     host: <%= ENV["INSTANCE_UNIX_SOCKET"] %>
     <% end %>
   cache:

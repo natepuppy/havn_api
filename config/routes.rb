@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   mount MissionControl::Jobs::Engine, at: "/jobs"
 
   get "up" => "rails/health#show", as: :rails_health_check
+  post "docusign/webhooks", to: "docusign/webhooks#create"
 
   resources :reps, only: [:index, :show] do
     member do

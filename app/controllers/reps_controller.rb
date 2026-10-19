@@ -36,12 +36,12 @@ class RepsController < ApplicationController
       reps = Reps::Save.call reps: Reps::Build.call(rep_params)
       Array(rep_params).each_with_index do |param, index|
         raw = param.respond_to?(:to_unsafe_h) ? param.to_unsafe_h : param.to_h
-        Reps::SendDocuments.call reps: [reps[index]], document_ids: raw["document_ids"] || raw[:document_ids]
         Reps::ProvisionLogin.call(
           rep:     reps[index],
           level:   raw["level"] || raw[:level],
           housing: raw["housing"] || raw[:housing],
         )
+        Reps::SendDocuments.call reps: [reps[index].reload], document_ids: raw["document_ids"] || raw[:document_ids]
       end
       reps = Rep.includes(:recruited_by, :user, document_deliveries: :onboarding_document).where(id: reps.map(&:id)).order(:id)
     end

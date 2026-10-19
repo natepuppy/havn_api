@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_08_160000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_19_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_160000) do
     t.text "error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "docusign_envelope_id"
+    t.index ["docusign_envelope_id"], name: "index_document_deliveries_on_docusign_envelope_id"
     t.index ["onboarding_document_id"], name: "index_document_deliveries_on_onboarding_document_id"
     t.index ["rep_id"], name: "index_document_deliveries_on_rep_id"
     t.index ["status"], name: "index_document_deliveries_on_status"
@@ -56,6 +58,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_160000) do
     t.datetime "updated_at", null: false
     t.boolean "send_by_default", default: true, null: false
     t.boolean "required", default: false, null: false
+    t.string "level"
+    t.string "docusign_template_id"
     t.index ["deleted_at"], name: "index_onboarding_documents_on_deleted_at"
   end
 
@@ -95,6 +99,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_160000) do
     t.string "drivers_license_number"
     t.boolean "active", default: true, null: false
     t.boolean "onboarding_completed", default: false, null: false
+    t.string "level"
     t.index ["deleted_at"], name: "index_reps_on_deleted_at"
     t.index ["email"], name: "index_reps_on_email"
     t.index ["recruited_by_id"], name: "index_reps_on_recruited_by_id"

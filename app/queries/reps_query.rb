@@ -77,11 +77,14 @@ class RepsQuery
   end
 
   def agreement_rep_ids
-    sent_delivery_rep_ids.joins(:onboarding_document)
-                         .where("onboarding_documents.name ILIKE ?", "%agreement%")
+    sent_delivery_rep_ids.joins(:onboarding_document).where(<<~SQL.squish)
+      onboarding_documents.name ILIKE '%agreement%'
+      OR onboarding_documents.name ILIKE '%addendum%'
+      OR onboarding_documents.level IS NOT NULL
+    SQL
   end
 
   def sent_delivery_rep_ids
-    DocumentDelivery.where(status: "sent").select(:rep_id)
+    DocumentDelivery.where(status: DocumentDelivery::OUTBOUND_STATUSES).select(:rep_id)
   end
 end

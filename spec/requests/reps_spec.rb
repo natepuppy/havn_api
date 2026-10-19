@@ -111,6 +111,44 @@ RSpec.describe "Rep onboarding", type: :request do
     expect(login.level).to eq("Rookie")
     expect(login.housing).to eq("Single housing")
     expect(Rep.find_by!(email: "avery.cole@example.com").user).to eq(login)
+
+    veteran = OnboardingDocument.create!(
+      name: "Havn Veteran Addendum", body: "Veteran agreement", level: "Veteran", position: 8,
+    )
+    rookie = OnboardingDocument.create!(
+      name: "Havn Rookie Addendum", body: "Rookie agreement", level: "Rookie", position: 7,
+    )
+    allow(Docusign::Config).to receive(:template_id).and_return(nil)
+
+    expect {
+      perform_enqueued_jobs do
+        post "/reps",
+             params: {
+               reps: [
+                 {
+                   first_name: "Blake",
+                   last_name: "Nguyen",
+                   email: "blake.nguyen@example.com",
+                   phone: "(801) 555-0188",
+                   start_date: "2026-10-20",
+                   shirt_size: "M",
+                   drivers_license_number: "D7654321",
+                   level: "Veteran",
+                   housing: "Married housing",
+                   recruited_by_id: recruited_by_id,
+                   document_ids: [document.id, veteran.id, rookie.id],
+                 },
+               ],
+             },
+             headers: headers,
+             as: :json
+      end
+    }.to change(DocumentDelivery, :count).by(2)
+
+    sent_names = DocumentDelivery.joins(:onboarding_document, :rep)
+                                 .where(reps: { email: "blake.nguyen@example.com" })
+                                 .pluck("onboarding_documents.name")
+    expect(sent_names).to contain_exactly("Welcome letter", "Havn Veteran Addendum")
     reset = ActionMailer::Base.deliveries.find { |message| message.subject.downcase.include?("reset") }
     expect(reset.to).to eq(["avery.cole@example.com"])
   end

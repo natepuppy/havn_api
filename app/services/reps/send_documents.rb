@@ -14,20 +14,25 @@ module Reps
     end
 
     def call
-      documents = OnboardingDocument.active.where(id: document_ids).order(:position, :id)
+      self.documents = OnboardingDocument.active.where(id: document_ids).order(:position, :id).to_a
 
       reps.each do |rep|
-        documents.each do |document|
-          delivery = DocumentDelivery.create!(
+        selected = documents_for rep
+        deliveries = selected.map do |document|
+          DocumentDelivery.create!(
             rep:                   rep,
             onboarding_document:   document,
             recipient_email:       rep.email,
             status:                "queued",
           )
+        end
+        deliveries.each do |delivery|
+          next if attached_addendum?(delivery, selected)
+
           SendOnboardingDocumentJob.perform_later delivery.id
         end
 
-        rep.update! status: "docs_sent" if documents.any?
+        rep.update! status: "docs_sent" if selected.any?
       end
 
       reps
@@ -35,6 +40,20 @@ module Reps
 
     private
 
-    attr_accessor :reps, :document_ids
+    attr_accessor :reps, :document_ids, :documents
+
+    def attached_addendum? delivery, selected
+      return false if delivery.onboarding_document.level.blank?
+
+      selected.any? { |document| document.level.blank? && document.agreement? && document.docusign? }
+    end
+
+    def documents_for rep
+      level = rep.level
+      chosen = documents.select { |document| document.for_level? level }
+      agreement = OnboardingDocument.active.where(level: nil).where("name ILIKE ?", "%agreement%")
+      match = OnboardingDocument.active.find_by level: level
+      (chosen + agreement + [match].compact).uniq.sort_by { |document| [document.position, document.id] }
+    end
   end
 end

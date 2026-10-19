@@ -9,6 +9,7 @@ class OnboardingDocumentNormalizer < ::BaseResponseNormalizer
     :active,
     :send_by_default,
     :required,
+    :level,
     :position,
     :created_at,
     :updated_at,

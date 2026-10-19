@@ -16,6 +16,7 @@ module Reps
       :shirt_size,
       :drivers_license_number,
       :market,
+      :level,
       :notes,
       :recruited_by_id,
       :status,

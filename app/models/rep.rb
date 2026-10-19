@@ -12,9 +12,14 @@ class Rep < ApplicationRecord
 
   validates :first_name, :last_name, :email, :status, presence: true
   validates :status, inclusion: { in: STATUSES }
+  validates :level, inclusion: { in: User::LEVELS }, allow_nil: true
   validates :email, "valid_email_2/email": true
 
   def full_name
     [first_name, last_name].compact.join(" ")
+  end
+
+  def level
+    self[:level].presence || user&.level
   end
 end
