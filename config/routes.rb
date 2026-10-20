@@ -41,6 +41,7 @@ Rails.application.routes.draw do
   resources :markets, only: [:index] do
     collection do
       post :create
+      delete :destroy
     end
   end
 

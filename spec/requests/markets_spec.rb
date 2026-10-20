@@ -31,4 +31,16 @@ RSpec.describe "Markets", type: :request do
     expect(response.parsed_body["data"].first["name"]).to eq("Cache Valley")
     expect(Market.find_by(name: "Cache Valley")).to be_present
   end
+
+  it "soft deletes a market" do
+    market = Market.create! name: "Cache Valley"
+    post "/users/sign_in", params: { user: { email: admin.email, password: password } }, as: :json
+    headers = { "Authorization" => "Bearer #{response.parsed_body["token"]}" }
+
+    delete "/markets", params: { ids: [market.id].to_json }, headers: headers
+
+    expect(response).to have_http_status(:ok)
+    expect(Market.find_by(id: market.id)).to be_nil
+    expect(Market.with_deleted.find(market.id).deleted_at).to be_present
+  end
 end

@@ -31,6 +31,19 @@ locals {
     queue = "${var.db_name}_queue"
     cable = "${var.db_name}_cable"
   }
+
+  docusign_secret_env = var.docusign_configured ? [
+    "DOCUSIGN_INTEGRATION_KEY",
+    "DOCUSIGN_USER_ID",
+    "DOCUSIGN_ACCOUNT_ID",
+    "DOCUSIGN_TEMPLATE_ID",
+    "DOCUSIGN_RSA_PRIVATE_KEY",
+  ] : []
+
+  docusign_plain_env = var.docusign_configured ? {
+    DOCUSIGN_OAUTH_HOST = "https://account.docusign.com"
+    DOCUSIGN_REST_HOST  = "https://na2.docusign.net"
+  } : {}
 }
 
 resource "google_project_service" "services" {
@@ -282,6 +295,27 @@ resource "google_cloud_run_v2_service" "web" {
           }
         }
       }
+
+      dynamic "env" {
+        for_each = local.docusign_secret_env
+        content {
+          name = env.value
+          value_source {
+            secret_key_ref {
+              secret  = env.value
+              version = "latest"
+            }
+          }
+        }
+      }
+
+      dynamic "env" {
+        for_each = local.docusign_plain_env
+        content {
+          name  = env.key
+          value = env.value
+        }
+      }
     }
   }
 
@@ -399,6 +433,27 @@ resource "google_cloud_run_v2_service" "worker" {
             secret  = google_secret_manager_secret.devise_jwt.secret_id
             version = "latest"
           }
+        }
+      }
+
+      dynamic "env" {
+        for_each = local.docusign_secret_env
+        content {
+          name = env.value
+          value_source {
+            secret_key_ref {
+              secret  = env.value
+              version = "latest"
+            }
+          }
+        }
+      }
+
+      dynamic "env" {
+        for_each = local.docusign_plain_env
+        content {
+          name  = env.key
+          value = env.value
         }
       }
     }

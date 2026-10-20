@@ -85,7 +85,7 @@ Address, City/State/Zip, and company name `d2433add-7111-4c94-b7a6-cd6daa228c4a`
 
 `Reps::SendDocuments` always includes the Rep Agreement and the addendum whose level matches the rep. Those two documents go out as one DocuSign envelope. The agreement is the first document and the addendum is attached after it. The rep and the company signer each sign once. Other onboarding documents are still emailed.
 
-DocuSign posts status changes to `POST /docusign/webhooks`. The app checks `X-DocuSign-Signature-1` with `DOCUSIGN_CONNECT_KEY`. A completed agreement shows as **Agreement signed** on the rep. Connect is not configured yet, so a signed envelope stays **Agreement sent** until that webhook exists.
+DocuSign posts status changes to `POST /docusign/webhooks`. The app checks `X-DocuSign-Signature-1` with `DOCUSIGN_CONNECT_KEY`. Opening a rep also asks DocuSign for the current envelope status, so a packet both signers have finished shows as **Agreement signed** even when Connect has not posted. Connect is not configured yet.
 
 ## Local run
 
@@ -101,4 +101,4 @@ Create one rep at http://localhost:5173/reps/new. Use an inbox you can open, and
 
 On the rep page, the agreement and the addendum should both move from queued to **sent**. Open the DocuSign email and confirm both documents are in the packet, with the filled fields, then sign as the rep. The company signer on the Rep Agreement is the person saved on the template.
 
-The page stays **Agreement sent** after you sign. DocuSign Connect is not set up, and this machine is not reachable from DocuSign, so the completed status cannot come back yet. **Agreement signed** appears only after Connect posts to `POST /docusign/webhooks` with `DOCUSIGN_CONNECT_KEY` set.
+Reload the rep after both the rep and the company signer finish. Havn asks DocuSign for the envelope status and shows **Agreement signed**. DocuSign Connect is not set up, and this machine is not reachable from DocuSign, so the status does not change until the page is loaded.

@@ -17,16 +17,31 @@ module Docusign
       JSON.parse response.body
     end
 
+    def envelope_statuses ids
+      ids.each_slice(50).flat_map do |slice|
+        query = URI.encode_www_form(
+          envelope_ids: slice.join(","),
+          from_date: "2020-01-01T00:00:00Z",
+          status: "any",
+        )
+        response = request(
+          Net::HTTP::Get,
+          "/restapi/v2.1/accounts/#{Config.account_id}/envelopes?#{query}",
+        )
+        JSON.parse(response.body).fetch("envelopes", [])
+      end
+    end
+
     private
 
-    def request klass, path, payload
+    def request klass, path, payload = nil
       uri = URI.join("#{Config.rest_host}/", path.sub(%r{\A/}, ""))
       http = Net::HTTP.new uri.host, uri.port
       http.use_ssl = true
       message = klass.new uri
       message["Authorization"] = "Bearer #{access_token}"
       message["Content-Type"] = "application/json"
-      message.body = JSON.generate(payload)
+      message.body = JSON.generate(payload) if payload
       response = http.request message
       return response if response.is_a? Net::HTTPSuccess
 

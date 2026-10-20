@@ -25,4 +25,14 @@ class MarketsController < ApplicationController
 
     render json: MarketNormalizer.new(markets, { errors: errors })
   end
+
+  def destroy
+    require_permission! :manage_reps
+    return if performed?
+
+    ids     = JSON.parse params[:ids].to_s
+    markets = Market.where(id: ids).destroy_all
+
+    render json: MarketNormalizer.new(markets)
+  end
 end

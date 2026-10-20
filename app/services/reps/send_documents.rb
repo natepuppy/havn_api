@@ -2,15 +2,18 @@
 
 module Reps
   class SendDocuments
-    def self.call reps:, document_ids:
+    # actor: the user sending the documents. Admins get their explicit addendum
+    # selection honored; everyone else gets the addendum that matches the rep's level.
+    def self.call reps:, document_ids:, actor: nil
       return if reps.blank?
 
-      new(reps, document_ids).call
+      new(reps, document_ids, actor).call
     end
 
-    def initialize reps, document_ids
+    def initialize reps, document_ids, actor
       self.reps         = Array reps
       self.document_ids = Array(document_ids).map(&:to_i).uniq
+      self.actor        = actor
     end
 
     def call
@@ -40,7 +43,7 @@ module Reps
 
     private
 
-    attr_accessor :reps, :document_ids, :documents
+    attr_accessor :reps, :document_ids, :documents, :actor
 
     def attached_addendum? delivery, selected
       return false if delivery.onboarding_document.level.blank?
@@ -49,11 +52,19 @@ module Reps
     end
 
     def documents_for rep
-      level = rep.level
-      chosen = documents.select { |document| document.for_level? level }
       agreement = OnboardingDocument.active.where(level: nil).where("name ILIKE ?", "%agreement%")
+      chosen = admin_override? ? documents : level_documents_for(rep)
+      (chosen + agreement).uniq.sort_by { |document| [document.position, document.id] }
+    end
+
+    def level_documents_for rep
+      level = rep.level
       match = OnboardingDocument.active.find_by level: level
-      (chosen + agreement + [match].compact).uniq.sort_by { |document| [document.position, document.id] }
+      documents.select { |document| document.for_level? level } + [match].compact
+    end
+
+    def admin_override?
+      actor.respond_to?(:admin?) && actor.admin?
     end
   end
 end

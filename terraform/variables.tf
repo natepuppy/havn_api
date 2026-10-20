@@ -147,3 +147,9 @@ variable "db_name" {
   description = "Primary database. Cache, queue, and cable databases use this name plus a suffix."
   default     = "pest_api_production"
 }
+
+variable "docusign_configured" {
+  type        = bool
+  description = "Mount the DocuSign secrets and production hosts. The secrets must already exist in this project."
+  default     = false
+}

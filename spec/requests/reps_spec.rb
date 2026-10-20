@@ -120,6 +120,10 @@ RSpec.describe "Rep onboarding", type: :request do
     )
     allow(Docusign::Config).to receive(:template_id).and_return(nil)
 
+    # A non-admin's addendum selection is narrowed to the rep's level.
+    grant! recruiter_role, "view_reps", "manage_reps"
+    recruiter_headers = auth_header recruiter
+
     expect {
       perform_enqueued_jobs do
         post "/reps",
@@ -140,7 +144,7 @@ RSpec.describe "Rep onboarding", type: :request do
                  },
                ],
              },
-             headers: headers,
+             headers: recruiter_headers,
              as: :json
       end
     }.to change(DocumentDelivery, :count).by(2)

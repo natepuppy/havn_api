@@ -168,13 +168,12 @@ module Docusign
       @addendum_delivery = queued_addendums.order(:id).last if rep_agreement?
     end
 
+    # Any level addendum queued alongside the agreement. Reps::SendDocuments decides
+    # which addendum gets queued (the rep's level, or an admin's explicit pick).
     def queued_addendums
-      level = delivery.rep.level
-      return DocumentDelivery.none if level.blank?
-
       DocumentDelivery.joins(:onboarding_document)
                       .where(rep_id: delivery.rep_id, status: "queued")
-                      .where(onboarding_documents: { level: level })
+                      .where.not(onboarding_documents: { level: nil })
                       .where.not(id: delivery.id)
     end
 

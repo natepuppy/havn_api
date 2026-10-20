@@ -8,7 +8,8 @@ class RepsController < ApplicationController
     reps = RepsQuery.call(
       relation: visible_reps.includes(:recruited_by, { user: :role }, document_deliveries: :onboarding_document),
       params:   params,
-    ).order("reps.last_name ASC, reps.first_name ASC")
+    ).order("reps.last_name ASC, reps.first_name ASC").load
+    Docusign::RefreshStatuses.call deliveries: reps.flat_map(&:document_deliveries)
     payload = RepNormalizer.new(reps).to_h
     payload[:markets] = Market.order(:name).pluck(:name)
 
@@ -20,6 +21,7 @@ class RepsController < ApplicationController
     return if performed?
 
     rep = visible_reps.includes(:recruited_by, { user: :role }, document_deliveries: :onboarding_document).find params[:id]
+    Docusign::RefreshStatuses.call deliveries: rep.document_deliveries
     render json: RepNormalizer.new(rep)
   end
 
@@ -41,7 +43,11 @@ class RepsController < ApplicationController
           level:   raw["level"] || raw[:level],
           housing: raw["housing"] || raw[:housing],
         )
-        Reps::SendDocuments.call reps: [reps[index].reload], document_ids: raw["document_ids"] || raw[:document_ids]
+        Reps::SendDocuments.call(
+          reps:         [reps[index].reload],
+          document_ids: raw["document_ids"] || raw[:document_ids],
+          actor:        current_user,
+        )
       end
       reps = Rep.includes(:recruited_by, :user, document_deliveries: :onboarding_document).where(id: reps.map(&:id)).order(:id)
     end
@@ -63,8 +69,11 @@ class RepsController < ApplicationController
 
     rep = visible_reps.find params[:id]
 
-    document_ids = params[:document_ids].presence || OnboardingDocument.active.pluck(:id)
-    Reps::SendDocuments.call reps: [rep], document_ids: document_ids
+    explicit_ids = params[:document_ids].presence
+    document_ids = explicit_ids || OnboardingDocument.active.pluck(:id)
+    # Only honor an admin override when they picked specific documents; a blanket
+    # resend should still narrow addenda to the rep's level.
+    Reps::SendDocuments.call reps: [rep], document_ids: document_ids, actor: (explicit_ids ? current_user : nil)
     rep = Rep.includes(:recruited_by, :user, document_deliveries: :onboarding_document).find rep.id
 
     render json: RepNormalizer.new(rep)
