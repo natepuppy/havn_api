@@ -163,13 +163,13 @@ GEM
       railties (>= 6.1.0)
     faker (3.8.0)
       i18n (>= 1.8.11, < 2)
-    faraday (2.14.4)
-      faraday-net_http (>= 2.0, < 3.5)
+    faraday (2.15.1)
+      faraday-net_http (>= 2.0, < 3.6)
       json
       logger
     faraday-multipart (1.2.0)
       multipart-post (~> 2.0)
-    faraday-net_http (3.4.4)
+    faraday-net_http (3.5.0)
       net-http (~> 0.5)
     fugit (1.14.0)
       et-orbi (~> 1.4)
@@ -214,7 +214,7 @@ GEM
       net-imap
       net-pop
       net-smtp
-    mailgun-ruby (1.4.5)
+    mailgun-ruby (1.4.6)
       faraday (~> 2.1)
       faraday-multipart (< 2)
       mini_mime
@@ -236,7 +236,8 @@ GEM
       turbo-rails
     msgpack (1.8.5)
     multipart-post (2.4.1)
-    net-http (0.9.1)
+    net-http (0.10.0)
+      net-protocol (>= 0.3.0)
       uri (>= 0.11.1)
     net-imap (0.6.7)
       date
@@ -440,7 +441,7 @@ GEM
     unicode-display_width (3.3.0)
       unicode-emoji (~> 4.3)
     unicode-emoji (4.3.0)
-    uri (1.1.1)
+    uri (1.1.2)
     useragent (0.16.11)
     valid_email2 (7.1.0)
       activemodel (>= 6.0)
