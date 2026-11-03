@@ -25,6 +25,24 @@ RSpec.describe Reps::EnsureLogins do
     expect(ActionMailer::Base.deliveries).to be_empty
   end
 
+  it "recovers a deleted login that belongs to the rep" do
+    role = Role.create! name: "Rep", code: "rep"
+    user = User.create!(
+      email: "deleted.ensure@example.com", password: "pass123!!!",
+      first_name: "Casey", last_name: "Nguyen", role: role,
+    )
+    user.update_columns deleted_at: Time.current, updated_at: Time.current
+    rep = Rep.create!(
+      first_name: "Casey", last_name: "Nguyen", email: user.email,
+      status: "pending", recruited_by: recruiter, user: user,
+    )
+
+    described_class.call
+
+    expect(user.reload.deleted_at).to be_nil
+    expect(rep.reload.user).to eq(user)
+  end
+
   it "does not give a second rep the login that already belongs to someone" do
     role = Role.create! name: "Rep", code: "rep"
     user = User.create!(

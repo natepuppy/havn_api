@@ -21,7 +21,7 @@ module Reps
           next
         end
 
-        user.restore if user.deleted?
+        user.recover! if user.deleted?
         next if rep.user_id == user.id
         next if Rep.where(user_id: user.id).where.not(id: rep.id).exists?
 
