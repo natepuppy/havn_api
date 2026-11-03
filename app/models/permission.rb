@@ -3,7 +3,7 @@
 class Permission < ApplicationRecord
   ACTIONS = {
     "view_reps"          => "See the reps list.",
-    "view_all_reps"      => "See every rep, not only the ones you recruited.",
+    "view_all_reps"      => "See every rep. The rep role ignores this and only sees people they recruited.",
     "manage_reps"        => "Onboard a rep and send their documents.",
     "manage_documents"   => "Add documents and choose which ones are active.",
     "manage_users"       => "Create users, change roles, deactivate accounts, and reset passwords.",

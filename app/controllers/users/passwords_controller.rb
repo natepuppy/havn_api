@@ -11,6 +11,9 @@ module Users
       else
         render json: { errors: resource.errors.full_messages }, status: :unprocessable_entity
       end
+    rescue Net::SMTPError, Errno::ECONNREFUSED, Errno::ECONNRESET, SocketError, Timeout::Error, Net::OpenTimeout => error
+      Rails.logger.error "Password reset email failed: #{error.class}: #{error.message}"
+      render json: { errors: ["We couldn't send the reset email. Try again in a few minutes."] }, status: :service_unavailable
     end
 
     def update

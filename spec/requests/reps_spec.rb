@@ -193,7 +193,7 @@ RSpec.describe "Rep onboarding", type: :request do
 
   it "limits a rep to the people they recruited" do
     rep_role = Role.create! name: "Rep", code: "rep"
-    grant! rep_role, "view_reps", "manage_reps"
+    grant! rep_role, "view_reps", "view_all_reps", "manage_reps"
     morgan = User.create!(
       email: "morgan.hale@example.com", password: password,
       first_name: "Morgan", last_name: "Hale", role: rep_role,
@@ -336,11 +336,17 @@ RSpec.describe "Rep onboarding", type: :request do
     put "/reps", params: { reps: [{ id: zoe.id, active: false }] }, headers: headers, as: :json
     expect(response.parsed_body["errors"]).to eq([])
     expect(zoe.reload.active).to be false
+    expect(zoe_user.reload.deleted_at).to be_present
+    expect(zoe.user_id).to eq(zoe_user.id)
 
     get "/reps", headers: headers
     expect(response.parsed_body["data"].map { |row| row["full_name"] }).to eq(["Amy Adams"])
 
     get "/reps", params: { active: "false" }, headers: headers
     expect(response.parsed_body["data"].map { |row| row["full_name"] }).to eq(["Zoe Young"])
+
+    put "/reps", params: { reps: [{ id: zoe.id, active: true }] }, headers: headers, as: :json
+    expect(zoe.reload.active).to be true
+    expect(zoe_user.reload.deleted_at).to be_nil
   end
 end

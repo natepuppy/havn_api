@@ -11,10 +11,11 @@ module ManagedUsers
         if raw[:deleted_at].present?
           return [nil, ["You cannot deactivate your own account"]] if user.id == current_user.id
 
-          user.destroy
+          Reps::SyncActivation.call active: false, user: user
         else
-          user.restore
+          Reps::SyncActivation.call active: true, user: user
         end
+        user = User.with_deleted.find user.id
       end
 
       if raw[:role].present?

@@ -29,3 +29,10 @@ db_max_connections     = 100
 
 # DocuSign secrets are created in Secret Manager. This only mounts them.
 docusign_configured = true
+
+# Password reset and onboarding mail. Leave smtp_address empty until the mailbox password is set.
+# smtp_address  = "smtp.office365.com"
+# smtp_port     = "587"
+# smtp_username = "onboarding@havnpestcontrol.com"
+# smtp_password = ""
+# mail_from     = "Havn Pest Control <onboarding@havnpestcontrol.com>"

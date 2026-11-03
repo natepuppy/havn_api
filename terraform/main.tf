@@ -44,6 +44,16 @@ locals {
     DOCUSIGN_OAUTH_HOST = "https://account.docusign.com"
     DOCUSIGN_REST_HOST  = "https://na2.docusign.net"
   } : {}
+
+  smtp_enabled = var.smtp_address != "" && var.smtp_password != ""
+
+  smtp_plain_env = local.smtp_enabled ? {
+    SMTP_ADDRESS  = var.smtp_address
+    SMTP_PORT     = var.smtp_port
+    SMTP_USERNAME = var.smtp_username
+    SMTP_DOMAIN   = var.smtp_domain
+    MAIL_FROM     = var.mail_from
+  } : {}
 }
 
 resource "google_project_service" "services" {
@@ -148,6 +158,25 @@ resource "google_secret_manager_secret" "db_password" {
 resource "google_secret_manager_secret_version" "db_password" {
   secret      = google_secret_manager_secret.db_password.id
   secret_data = random_password.db.result
+}
+
+resource "google_secret_manager_secret" "smtp_password" {
+  count     = local.smtp_enabled ? 1 : 0
+  secret_id = "SMTP_PASSWORD"
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.services]
+}
+
+resource "google_secret_manager_secret_version" "smtp_password" {
+  count       = local.smtp_enabled ? 1 : 0
+  secret      = google_secret_manager_secret.smtp_password[0].id
+  secret_data = var.smtp_password
+
+  lifecycle {
+    ignore_changes = [secret_data]
+  }
 }
 
 resource "google_secret_manager_secret" "devise_jwt" {
@@ -316,6 +345,27 @@ resource "google_cloud_run_v2_service" "web" {
           value = env.value
         }
       }
+
+      dynamic "env" {
+        for_each = local.smtp_plain_env
+        content {
+          name  = env.key
+          value = env.value
+        }
+      }
+
+      dynamic "env" {
+        for_each = local.smtp_enabled ? ["SMTP_PASSWORD"] : []
+        content {
+          name = env.value
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.smtp_password[0].secret_id
+              version = "latest"
+            }
+          }
+        }
+      }
     }
   }
 
@@ -325,6 +375,7 @@ resource "google_cloud_run_v2_service" "web" {
     google_secret_manager_secret_version.rails_master_key,
     google_secret_manager_secret_version.db_password,
     google_secret_manager_secret_version.devise_jwt,
+    google_secret_manager_secret_version.smtp_password,
     google_sql_database.app,
     google_sql_user.app,
   ]
@@ -456,6 +507,27 @@ resource "google_cloud_run_v2_service" "worker" {
           value = env.value
         }
       }
+
+      dynamic "env" {
+        for_each = local.smtp_plain_env
+        content {
+          name  = env.key
+          value = env.value
+        }
+      }
+
+      dynamic "env" {
+        for_each = local.smtp_enabled ? ["SMTP_PASSWORD"] : []
+        content {
+          name = env.value
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.smtp_password[0].secret_id
+              version = "latest"
+            }
+          }
+        }
+      }
     }
   }
 
@@ -465,6 +537,7 @@ resource "google_cloud_run_v2_service" "worker" {
     google_secret_manager_secret_version.rails_master_key,
     google_secret_manager_secret_version.db_password,
     google_secret_manager_secret_version.devise_jwt,
+    google_secret_manager_secret_version.smtp_password,
     google_sql_database.app,
     google_sql_user.app,
   ]

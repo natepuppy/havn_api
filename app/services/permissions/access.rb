@@ -11,6 +11,10 @@ module Permissions
 
       rows = PermissionsQuery.call user_id: user.id, resolved: true
       Permission::ACTIONS.keys.index_with do |action|
+        # The rep role only ever sees people they recruited. A permissions
+        # checkbox cannot widen that.
+        next false if action == "view_all_reps" && user.role&.code == "rep"
+
         row = rows.find { |permission| permission.action == action }
         row.present? && row.allowed
       end

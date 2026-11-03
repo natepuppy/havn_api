@@ -153,3 +153,37 @@ variable "docusign_configured" {
   description = "Mount the DocuSign secrets and production hosts. The secrets must already exist in this project."
   default     = false
 }
+
+variable "smtp_address" {
+  type        = string
+  description = "SMTP host for password reset and onboarding mail. Microsoft 365 is smtp.office365.com. Leave empty to skip."
+  default     = ""
+}
+
+variable "smtp_port" {
+  type    = string
+  default = "587"
+}
+
+variable "smtp_username" {
+  type        = string
+  description = "Mailbox that sends reset mail. Must match MAIL_FROM."
+  default     = ""
+}
+
+variable "smtp_password" {
+  type        = string
+  description = "Mailbox password or app password."
+  sensitive   = true
+  default     = ""
+}
+
+variable "smtp_domain" {
+  type    = string
+  default = "havnpestcontrol.com"
+}
+
+variable "mail_from" {
+  type    = string
+  default = "Havn Pest Control <onboarding@havnpestcontrol.com>"
+}

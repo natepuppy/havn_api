@@ -81,6 +81,35 @@ RSpec.describe "User management and password reset", type: :request do
     expect(user.reload.valid_password?("thirdpass1")).to be true
   end
 
+  it "deactivates a user and their rep together" do
+    user = User.create!(
+      email: "casey.nguyen@example.com", password: password,
+      first_name: "Casey", last_name: "Nguyen", role: rep_role,
+    )
+    rep = Rep.create!(
+      first_name: "Casey", last_name: "Nguyen", email: user.email,
+      status: "pending", recruited_by: admin, user: user,
+    )
+
+    put "/managed_users",
+        params: { users: [{ id: user.id, deleted_at: "deactivate" }] },
+        headers: headers,
+        as: :json
+
+    expect(response.parsed_body["errors"]).to eq([])
+    expect(user.reload.deleted_at).to be_present
+    expect(rep.reload.active).to be false
+    expect(rep.user_id).to eq(user.id)
+
+    put "/managed_users",
+        params: { users: [{ id: user.id, deleted_at: nil }] },
+        headers: headers,
+        as: :json
+
+    expect(user.reload.deleted_at).to be_nil
+    expect(rep.reload.active).to be true
+  end
+
   it "updates role permissions" do
     post "/permissions",
          params: {

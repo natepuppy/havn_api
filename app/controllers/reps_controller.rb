@@ -88,16 +88,28 @@ class RepsController < ApplicationController
     reps      = []
 
     if errors.empty?
-      reps = Array(params[:reps]).map do |row|
+      saved = []
+      Array(params[:reps]).each do |row|
         raw = row.respond_to?(:to_unsafe_h) ? row.to_unsafe_h : row.to_h
         raw = raw.with_indifferent_access
         rep = visible_reps.find raw[:id]
-        rep.active = raw[:active] if raw.key?(:active)
+        if raw.key?(:active)
+          active = ActiveModel::Type::Boolean.new.cast(raw[:active])
+          if active == false && rep.user_id == current_user.id
+            errors = ["You cannot deactivate your own account"]
+            break
+          end
+          Reps::SyncActivation.call active: active, rep: rep
+        end
         rep.onboarding_completed = raw[:onboarding_completed] if raw.key?(:onboarding_completed)
         rep.save!
-        rep
+        saved << rep
       end
-      reps = Rep.includes(:recruited_by, { user: :role }, document_deliveries: :onboarding_document).where(id: reps.map(&:id))
+      reps = if errors.empty?
+        Rep.includes(:recruited_by, { user: :role }, document_deliveries: :onboarding_document).where(id: saved.map(&:id))
+      else
+        []
+      end
     end
 
     render json: RepNormalizer.new(reps, { errors: errors })
