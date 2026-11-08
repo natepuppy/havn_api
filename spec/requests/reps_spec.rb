@@ -157,6 +157,44 @@ RSpec.describe "Rep onboarding", type: :request do
     expect(reset.to).to eq(["avery.cole@example.com"])
   end
 
+  it "creates the rep when the login email cannot be delivered" do
+    grant! admin_role, "view_reps", "view_all_reps", "manage_reps"
+    recruited_by_id = recruiter.id
+    headers = auth_header
+    allow_any_instance_of(User).to receive(:send_reset_password_instructions)
+      .and_raise(Errno::ECONNREFUSED.new("Connection refused - connect(2) for \"localhost\" port 25"))
+
+    expect {
+      post "/reps",
+           params: {
+             reps: [
+               {
+                 first_name: "Avery",
+                 last_name: "Cole",
+                 email: "avery.refused@example.com",
+                 phone: "(801) 555-0199",
+                 start_date: "2026-10-15",
+                 shirt_size: "L",
+                 drivers_license_number: "D1234567",
+                 level: "Rookie",
+                 housing: "Single housing",
+                 recruited_by_id: recruited_by_id,
+                 document_ids: [document.id],
+               },
+             ],
+           },
+           headers: headers,
+           as: :json
+    }.to change(Rep, :count).by(1)
+     .and change(User, :count).by(1)
+     .and change(DocumentDelivery, :count).by(1)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body["errors"]).to eq([])
+    expect(response.parsed_body.dig("data", 0, "status")).to eq("docs_sent")
+    expect(User.find_by!(email: "avery.refused@example.com").rep).to be_present
+  end
+
   it "filters reps by name, recruiter, and market" do
     other = User.create!(
       email: "alex.nguyen@example.com",

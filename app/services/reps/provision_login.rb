@@ -31,7 +31,7 @@ module Reps
           password:   chosen,
         )
       else
-        user.restore if user.deleted?
+        user.recover! if user.deleted?
         owned_by_another_rep = Rep.where(user_id: user.id).where.not(id: rep.id).exists?
         unless owned_by_another_rep
           user.update!(
@@ -45,12 +45,23 @@ module Reps
       end
 
       rep.update! user: user if rep.user_id != user.id && !Rep.where(user_id: user.id).where.not(id: rep.id).exists?
-      user.send_reset_password_instructions if created && send_reset
+      deliver_reset user if created
       user
     end
 
     private
 
     attr_accessor :rep, :password, :send_reset, :level, :housing
+
+    # Cloud Run has no local mail server. A refused reset email must not fail
+    # rep creation; the login still exists and the packet can still go out.
+    def deliver_reset user
+      return unless send_reset
+      return if Rails.env.production? && ENV["SMTP_ADDRESS"].blank?
+
+      user.send_reset_password_instructions
+    rescue Net::SMTPError, Errno::ECONNREFUSED, Errno::ECONNRESET, SocketError, Timeout::Error, Net::OpenTimeout => error
+      Rails.logger.error "Rep login email failed for user #{user.id}: #{error.class}: #{error.message}"
+    end
   end
 end
