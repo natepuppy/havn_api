@@ -2,7 +2,7 @@ source "https://rubygems.org"
 
 ruby "3.3.3"
 
-gem "rails", "~> 8.0.4"
+gem "rails", "~> 8.1.4"
 # json 3.0 dropped the quirks_mode keyword Rails 8.0 still passes.
 gem "json", "~> 2.7"
 gem "pg", "~> 1.1"
