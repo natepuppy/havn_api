@@ -112,8 +112,8 @@ RSpec.describe "Rep onboarding", type: :request do
     expect(login.housing).to eq("Single housing")
     expect(Rep.find_by!(email: "avery.cole@example.com").user).to eq(login)
 
-    veteran = OnboardingDocument.create!(
-      name: "Havn Veteran Addendum", body: "Veteran agreement", level: "Veteran", position: 8,
+    pro = OnboardingDocument.create!(
+      name: "Havn Pro Addendum", body: "Pro agreement", level: "Pro", position: 8,
     )
     rookie = OnboardingDocument.create!(
       name: "Havn Rookie Addendum", body: "Rookie agreement", level: "Rookie", position: 7,
@@ -137,10 +137,10 @@ RSpec.describe "Rep onboarding", type: :request do
                    start_date: "2026-10-20",
                    shirt_size: "M",
                    drivers_license_number: "D7654321",
-                   level: "Veteran",
+                   level: "Pro",
                    housing: "Married housing",
                    recruited_by_id: recruited_by_id,
-                   document_ids: [document.id, veteran.id, rookie.id],
+                   document_ids: [document.id, pro.id, rookie.id],
                  },
                ],
              },
@@ -152,7 +152,7 @@ RSpec.describe "Rep onboarding", type: :request do
     sent_names = DocumentDelivery.joins(:onboarding_document, :rep)
                                  .where(reps: { email: "blake.nguyen@example.com" })
                                  .pluck("onboarding_documents.name")
-    expect(sent_names).to contain_exactly("Welcome letter", "Havn Veteran Addendum")
+    expect(sent_names).to contain_exactly("Welcome letter", "Havn Pro Addendum")
     reset = ActionMailer::Base.deliveries.find { |message| message.subject.downcase.include?("reset") }
     expect(reset.to).to eq(["avery.cole@example.com"])
   end
@@ -279,7 +279,7 @@ RSpec.describe "Rep onboarding", type: :request do
                  start_date: "2026-10-15",
                  shirt_size: "L",
                  drivers_license_number: "D1234567",
-                 level: "Veteran",
+                 level: "Rookie",
                  housing: "Married housing",
                  recruited_by_id: recruiter.id,
                  document_ids: [optional.id],
@@ -326,6 +326,62 @@ RSpec.describe "Rep onboarding", type: :request do
     expect(morgan_node["children"].first["rep_id"]).to eq(casey.id)
   end
 
+  it "keeps a deactivated rep in the tree until their downline is reassigned" do
+    grant! admin_role, "view_reps", "view_all_reps", "manage_reps"
+    rep_role = Role.find_or_create_by!(name: "Rep", code: "rep")
+    morgan_user = User.create!(
+      email: "tree.morgan@example.com", password: password,
+      first_name: "Morgan", last_name: "Hale", role: rep_role,
+    )
+    morgan = Rep.create!(
+      first_name: "Morgan", last_name: "Hale", email: "tree.morgan@example.com",
+      phone: "(801) 555-0110", start_date: "2026-09-02", status: "docs_sent",
+      recruited_by: recruiter, user: morgan_user,
+    )
+    casey = Rep.create!(
+      first_name: "Casey", last_name: "Nguyen", email: "tree.casey@example.com",
+      phone: "(801) 555-0120", start_date: "2026-11-09", status: "pending",
+      recruited_by: morgan_user,
+    )
+    headers = auth_header
+
+    put "/reps", params: { reps: [{ id: morgan.id, active: false }] }, headers: headers, as: :json
+    get "/reps/#{casey.id}/recruiting_tree", headers: headers
+    names = response.parsed_body["data"].first["children"].map { |child| child["name"] }
+    expect(names).to eq(["Morgan Hale"])
+
+    post "/reps/#{morgan.id}/reassign_downline",
+         params: { recruited_by_id: recruiter.id },
+         headers: headers,
+         as: :json
+    expect(response).to have_http_status(:ok)
+    expect(casey.reload.recruited_by_id).to eq(recruiter.id)
+
+    get "/reps/#{casey.id}/recruiting_tree", headers: headers
+    names = response.parsed_body["data"].first["children"].map { |child| child["name"] }
+    expect(names).to eq(["Casey Nguyen"])
+    expect(names).not_to include("Morgan Hale")
+  end
+
+  it "changes who recruited a rep" do
+    grant! admin_role, "view_reps", "view_all_reps", "manage_reps"
+    other = User.create!(
+      email: "other.recruiter@example.com", password: password,
+      first_name: "Alex", last_name: "Nguyen", role: recruiter_role,
+    )
+    rep = Rep.create!(
+      first_name: "Casey", last_name: "Nguyen", email: "move.casey@example.com",
+      phone: "(801) 555-0120", start_date: "2026-11-09", status: "pending",
+      recruited_by: recruiter,
+    )
+    headers = auth_header
+
+    put "/reps", params: { reps: [{ id: rep.id, recruited_by_id: other.id }] }, headers: headers, as: :json
+
+    expect(response.parsed_body["errors"]).to eq([])
+    expect(rep.reload.recruited_by_id).to eq(other.id)
+  end
+
   it "sorts reps by name and filters paperwork, role, and active status" do
     grant! admin_role, "view_reps", "view_all_reps", "manage_reps"
     rep_role = Role.find_or_create_by!(name: "Rep", code: "rep")
@@ -365,8 +421,9 @@ RSpec.describe "Rep onboarding", type: :request do
     expect(response.parsed_body["data"].map { |row| row["full_name"] }).to eq(["Zoe Young"])
     expect(response.parsed_body["data"].first["agreement_completed"]).to be true
 
+    DocumentDelivery.find_by!(rep: zoe).update! status: "completed"
     get "/reps", params: { paperwork: "completed" }, headers: headers
-    expect(response.parsed_body["data"].map { |row| row["full_name"] }).to eq(["Amy Adams"])
+    expect(response.parsed_body["data"].map { |row| row["full_name"] }).to eq(["Zoe Young"])
 
     get "/reps", params: { role: "admin" }, headers: headers
     expect(response.parsed_body["data"].map { |row| row["full_name"] }).to eq(["Amy Adams"])

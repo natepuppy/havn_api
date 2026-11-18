@@ -46,12 +46,35 @@ RSpec.describe Docusign::RefreshStatuses do
   end
 
   it "leaves an open envelope as sent" do
-    client = instance_double(Docusign::Client, envelope_statuses: [{ "envelopeId" => "env-1", "status" => "sent" }])
+    client = instance_double(
+      Docusign::Client,
+      envelope_statuses: [{ "envelopeId" => "env-1", "status" => "sent" }],
+      envelope_recipients: { "signers" => [] },
+    )
     allow(Docusign::Client).to receive(:new).and_return(client)
 
     described_class.call deliveries: [agreement_delivery]
 
     expect(agreement_delivery.reload.status).to eq("sent")
+  end
+
+  it "marks the agreement awaiting corporate signature when the rep has signed" do
+    client = instance_double(
+      Docusign::Client,
+      envelope_statuses: [{ "envelopeId" => "env-1", "status" => "sent" }],
+      envelope_recipients: {
+        "signers" => [
+          { "recipientId" => "1", "roleName" => "Rep", "status" => "completed", "email" => rep.email },
+          { "recipientId" => "2", "roleName" => "Company", "status" => "sent" },
+        ],
+      },
+    )
+    allow(Docusign::Client).to receive(:new).and_return(client)
+
+    described_class.call deliveries: [agreement_delivery, addendum_delivery]
+
+    expect(agreement_delivery.reload.status).to eq("awaiting_corporate_signature")
+    expect(addendum_delivery.reload.status).to eq("sent")
   end
 
   it "does not raise when DocuSign is unavailable" do

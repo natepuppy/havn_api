@@ -10,6 +10,7 @@ module Reps
       @rep = rep
       @visible_ids = visible_reps.pluck(:id)
       @reps_by_recruiter = Rep.where(id: tree_rep_ids).includes(user: :role).group_by(&:recruited_by_id)
+      @recruiter_ids_with_downline = Rep.distinct.pluck(:recruited_by_id).compact
     end
 
     def call
@@ -21,7 +22,7 @@ module Reps
 
     private
 
-    attr_reader :rep, :visible_ids, :reps_by_recruiter
+    attr_reader :rep, :visible_ids, :reps_by_recruiter, :recruiter_ids_with_downline
 
     def tree_rep_ids
       @tree_rep_ids ||= (ancestor_chain.map(&:id) + visible_ids).uniq
@@ -53,6 +54,7 @@ module Reps
       children = Array(reps_by_recruiter[user&.id]).sort_by(&:full_name).filter_map do |child|
         node_for user: child.user, rep: child, seen: seen
       end
+      return if hidden_from_tree?(record)
 
       {
         key:       record ? "rep-#{record.id}" : "user-#{user.id}",
@@ -66,6 +68,12 @@ module Reps
         visible:   record.present? && visible_ids.include?(record.id),
         children:  children,
       }
+    end
+
+    # A deactivated rep stays in the tree while anyone is still recruited by them.
+    # Once that downline has been moved, they come out of the tree.
+    def hidden_from_tree? record
+      record.present? && !record.active && !recruiter_ids_with_downline.include?(record.user_id)
     end
   end
 end

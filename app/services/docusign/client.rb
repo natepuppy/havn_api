@@ -17,6 +17,14 @@ module Docusign
       JSON.parse response.body
     end
 
+    def envelope_recipients id
+      response = request(
+        Net::HTTP::Get,
+        "/restapi/v2.1/accounts/#{Config.account_id}/envelopes/#{id}/recipients",
+      )
+      JSON.parse response.body
+    end
+
     def envelope_statuses ids
       ids.each_slice(50).flat_map do |slice|
         query = URI.encode_www_form(

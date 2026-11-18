@@ -65,7 +65,7 @@ class RepsQuery
     when "agreement"
       self.relation = relation.where id: agreement_rep_ids
     when "completed"
-      self.relation = relation.where onboarding_completed: true
+      self.relation = relation.where id: completed_agreement_rep_ids
     end
   end
 
@@ -74,6 +74,14 @@ class RepsQuery
     return if code.blank?
 
     self.relation = relation.where user_id: User.joins(:role).where(roles: { code: code }).select(:id)
+  end
+
+  def completed_agreement_rep_ids
+    DocumentDelivery.joins(:onboarding_document).where(status: "completed").where(<<~SQL.squish).select(:rep_id)
+      onboarding_documents.level IS NULL
+      AND onboarding_documents.name ILIKE '%agreement%'
+      AND onboarding_documents.name NOT ILIKE '%addendum%'
+    SQL
   end
 
   def agreement_rep_ids

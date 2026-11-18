@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_21_170000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_12_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -28,6 +28,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_170000) do
     t.index ["onboarding_document_id"], name: "index_document_deliveries_on_onboarding_document_id"
     t.index ["rep_id"], name: "index_document_deliveries_on_rep_id"
     t.index ["status"], name: "index_document_deliveries_on_status"
+  end
+
+  create_table "level_finish_rates", force: :cascade do |t|
+    t.string "level", null: false
+    t.decimal "finish_rate", precision: 5, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["level"], name: "index_level_finish_rates_on_level", unique: true
   end
 
   create_table "manager_teams", force: :cascade do |t|
@@ -78,6 +86,29 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_170000) do
     t.index ["user_id"], name: "index_permissions_on_user_id"
   end
 
+  create_table "recruiting_goal_weeks", force: :cascade do |t|
+    t.bigint "recruiting_goal_id", null: false
+    t.integer "week_number", null: false
+    t.date "starts_on", null: false
+    t.date "ends_on", null: false
+    t.decimal "projected_revenue", precision: 14, scale: 2
+    t.decimal "expenses", precision: 14, scale: 2
+    t.decimal "percent_to_goal_override", precision: 6, scale: 1
+    t.decimal "percent_into_season_override", precision: 6, scale: 1
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["recruiting_goal_id", "week_number"], name: "index_recruiting_goal_weeks_on_goal_and_week", unique: true
+    t.index ["recruiting_goal_id"], name: "index_recruiting_goal_weeks_on_recruiting_goal_id"
+  end
+
+  create_table "recruiting_goals", force: :cascade do |t|
+    t.decimal "revenue_goal", precision: 14, scale: 2, default: "15000000.0", null: false
+    t.date "season_start", null: false
+    t.date "season_end", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "reps", force: :cascade do |t|
     t.string "first_name", null: false
     t.string "last_name", null: false
@@ -102,6 +133,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_170000) do
     t.boolean "active", default: true, null: false
     t.boolean "onboarding_completed", default: false, null: false
     t.string "level"
+    t.decimal "last_year_revenue", precision: 12, scale: 2
+    t.decimal "projected_revenue", precision: 12, scale: 2
     t.index ["deleted_at"], name: "index_reps_on_deleted_at"
     t.index ["email"], name: "index_reps_on_email"
     t.index ["recruited_by_id"], name: "index_reps_on_recruited_by_id"
@@ -158,6 +191,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_21_170000) do
   add_foreign_key "manager_teams", "users"
   add_foreign_key "permissions", "roles"
   add_foreign_key "permissions", "users"
+  add_foreign_key "recruiting_goal_weeks", "recruiting_goals"
   add_foreign_key "reps", "users"
   add_foreign_key "reps", "users", column: "recruited_by_id"
   add_foreign_key "users", "roles"

@@ -7,7 +7,7 @@ module Reps
         hash do
           required(:id).filled :integer
           optional(:active).value :bool
-          optional(:onboarding_completed).value :bool
+          optional(:recruited_by_id).filled :integer
         end
       end
     end

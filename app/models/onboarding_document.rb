@@ -19,6 +19,10 @@ class OnboardingDocument < ApplicationRecord
     level.present? || name.to_s.match?(/agreement|addendum/i)
   end
 
+  def rep_agreement?
+    level.blank? && name.to_s.match?(/agreement/i) && !name.to_s.match?(/addendum/i)
+  end
+
   def docusign_template_id
     self[:docusign_template_id].presence || fallback_template_id
   end

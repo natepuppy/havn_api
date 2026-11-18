@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Keeps the four DocuSign documents and soft-deletes every other onboarding document.
+# Keeps the DocuSign agreement and the Rookie and Pro addenda, and soft-deletes every other onboarding document.
 # Run through script/replace_onboarding_documents.sh so the database connection is set.
 
 documents = [
@@ -34,17 +34,6 @@ documents = [
   },
   {
     position: 3,
-    name: "Havn Veteran Addendum",
-    description: "Agreement sent to Veteran reps.",
-    body: "Sent through DocuSign when the rep's level is Veteran.",
-    active: true,
-    send_by_default: false,
-    required: false,
-    level: "Veteran",
-    docusign_template_id: "3809bfb3-d00d-42bc-a829-7894284d0d23",
-  },
-  {
-    position: 4,
     name: "Havn Pro Addendum",
     description: "Agreement sent to Pro reps.",
     body: "Sent through DocuSign when the rep's level is Pro.",

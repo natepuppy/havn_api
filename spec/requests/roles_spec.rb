@@ -29,6 +29,12 @@ RSpec.describe "Roles and teams", type: :request do
     post "/roles", params: { role: { name: "Regional Lead" } }, headers: headers, as: :json
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body["data"]["code"]).to eq("regional_lead")
+    role_id = response.parsed_body["data"]["id"]
+
+    put "/roles", params: { role: { id: role_id, name: "Vice President" } }, headers: headers, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body["data"]["name"]).to eq("Vice President")
+    expect(response.parsed_body["data"]["code"]).to eq("regional_lead")
 
     post "/roles", params: { role: { name: "Manager" } }, headers: headers, as: :json
     post "/teams", params: { team: { name: "Wasatch Front" } }, headers: headers, as: :json

@@ -126,14 +126,6 @@ documents = [
     body: "Sent through DocuSign when the rep's level is Rookie.",
   },
   {
-    position: 8,
-    level: "Veteran",
-    docusign_template_id: "3809bfb3-d00d-42bc-a829-7894284d0d23",
-    name: "Havn Veteran Addendum",
-    description: "Agreement sent to Veteran reps.",
-    body: "Sent through DocuSign when the rep's level is Veteran.",
-  },
-  {
     position: 9,
     level: "Pro",
     docusign_template_id: "e8048ca0-1a5b-4cf7-bed9-6c5c0349eadb",

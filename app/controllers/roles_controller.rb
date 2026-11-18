@@ -26,4 +26,21 @@ class RolesController < ApplicationController
 
     render json: RoleNormalizer.new(Role.create!(name: name, code: code))
   end
+
+  def update
+    require_permission! :manage_users
+    return if performed?
+
+    role = Role.find_by id: params.dig(:role, :id)
+    name = params.dig(:role, :name).to_s.strip
+    if role.nil?
+      return render json: RoleNormalizer.new([], { errors: ["Choose a role"] })
+    end
+    if name.blank?
+      return render json: RoleNormalizer.new([], { errors: ["Enter a role name"] })
+    end
+
+    role.update! name: name
+    render json: RoleNormalizer.new(role)
+  end
 end

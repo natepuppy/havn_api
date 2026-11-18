@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   resources :reps, only: [:index, :show] do
     member do
       post :send_documents
+      post :reassign_downline
       get :recruiting_tree
     end
     collection do
@@ -64,8 +65,12 @@ Rails.application.routes.draw do
   resources :roles, only: [:index] do
     collection do
       post :create
+      put :update
     end
   end
+
+  resource :projections, only: [:show, :update]
+  resource :recruiting_goal, only: [:show, :update], path: "recruiting_goals", controller: "recruiting_goals"
 
   resources :teams, only: [:index] do
     collection do

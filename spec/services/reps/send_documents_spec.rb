@@ -15,15 +15,15 @@ RSpec.describe Reps::SendDocuments do
     )
     rep = Rep.create!(
       first_name: "Nathan", last_name: "Clark", email: "same.rep@example.com",
-      status: "pending", level: "Veteran", recruited_by: recruiter,
+      status: "pending", level: "Pro", recruited_by: recruiter,
     )
     agreement = OnboardingDocument.create!(
       name: "Rep Agreement", body: "Agree",
       docusign_template_id: Docusign::SendEnvelope::AGREEMENT_TEMPLATE_ID,
     )
     addendum = OnboardingDocument.create!(
-      name: "Havn Veteran Addendum", body: "Addendum", level: "Veteran",
-      docusign_template_id: "3809bfb3-d00d-42bc-a829-7894284d0d23",
+      name: "Havn Pro Addendum", body: "Addendum", level: "Pro",
+      docusign_template_id: "e8048ca0-1a5b-4cf7-bed9-6c5c0349eadb",
     )
 
     expect {
@@ -31,7 +31,7 @@ RSpec.describe Reps::SendDocuments do
     }.to have_enqueued_job(SendOnboardingDocumentJob).exactly(1).times
 
     names = rep.document_deliveries.joins(:onboarding_document).pluck("onboarding_documents.name")
-    expect(names).to contain_exactly("Rep Agreement", "Havn Veteran Addendum")
+    expect(names).to contain_exactly("Rep Agreement", "Havn Pro Addendum")
   end
 
   context "with level addenda" do
@@ -52,7 +52,7 @@ RSpec.describe Reps::SendDocuments do
     let(:rep) do
       Rep.create!(
         first_name: "Casey", last_name: "Morgan", email: "casey.morgan@example.com",
-        status: "pending", level: "Veteran", recruited_by: recruiter,
+        status: "pending", level: "Pro", recruited_by: recruiter,
       )
     end
     let!(:agreement) do
@@ -67,10 +67,10 @@ RSpec.describe Reps::SendDocuments do
         docusign_template_id: "bf7c1049-dc3c-4270-8f63-b0240473d8a8",
       )
     end
-    let!(:veteran) do
+    let!(:pro) do
       OnboardingDocument.create!(
-        name: "Havn Veteran Addendum", body: "Veteran", level: "Veteran", position: 8,
-        docusign_template_id: "3809bfb3-d00d-42bc-a829-7894284d0d23",
+        name: "Havn Pro Addendum", body: "Pro", level: "Pro", position: 8,
+        docusign_template_id: "e8048ca0-1a5b-4cf7-bed9-6c5c0349eadb",
       )
     end
 
@@ -87,13 +87,13 @@ RSpec.describe Reps::SendDocuments do
     it "forces the rep's level addendum for a non-admin, even if they pick another" do
       described_class.call reps: [rep], document_ids: [agreement.id, rookie.id], actor: recruiter
 
-      expect(delivered_names).to contain_exactly("Rep Agreement", "Havn Veteran Addendum")
+      expect(delivered_names).to contain_exactly("Rep Agreement", "Havn Pro Addendum")
     end
 
     it "falls back to the rep's level addendum when there is no actor" do
       described_class.call reps: [rep], document_ids: [agreement.id]
 
-      expect(delivered_names).to contain_exactly("Rep Agreement", "Havn Veteran Addendum")
+      expect(delivered_names).to contain_exactly("Rep Agreement", "Havn Pro Addendum")
     end
   end
 end

@@ -55,6 +55,19 @@ class RepsController < ApplicationController
     render json: RepNormalizer.new(reps, { errors: errors })
   end
 
+  def reassign_downline
+    require_permission! :manage_reps
+    return if performed?
+
+    rep = visible_reps.find params[:id]
+    result = Reps::ReassignDownline.call rep: rep, recruited_by: User.find_by(id: params[:recruited_by_id])
+    if result.error
+      return render json: { errors: [result.error] }, status: :unprocessable_entity
+    end
+
+    render json: { data: { reassigned: result.count }, errors: [] }
+  end
+
   def recruiting_tree
     require_permission! :view_reps
     return if performed?
@@ -101,7 +114,18 @@ class RepsController < ApplicationController
           end
           Reps::SyncActivation.call active: active, rep: rep
         end
-        rep.onboarding_completed = raw[:onboarding_completed] if raw.key?(:onboarding_completed)
+        if raw[:recruited_by_id].present?
+          recruiter = User.find_by id: raw[:recruited_by_id]
+          if recruiter.nil?
+            errors = ["Choose a recruiter"]
+            break
+          end
+          if Reps::RecruiterAssignment.cycle?(rep: rep, recruited_by_id: recruiter.id)
+            errors = ["That person is already in this rep's downline"]
+            break
+          end
+          rep.recruited_by = recruiter
+        end
         rep.save!
         saved << rep
       end

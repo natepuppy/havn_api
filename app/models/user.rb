@@ -22,7 +22,7 @@ class User < ApplicationRecord
            inverse_of: :recruited_by,
            dependent: :restrict_with_error
 
-  LEVELS = %w[Rookie Veteran Pro].freeze
+  LEVELS = %w[Rookie Pro].freeze
   HOUSINGS = ["Single housing", "Married housing"].freeze
 
   scope :recruiters, -> { all }

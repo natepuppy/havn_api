@@ -21,12 +21,14 @@ class RepNormalizer < ::BaseResponseNormalizer
     :active,
     :onboarding_completed,
     :recruited_by_id,
+    :user_id,
     :created_at,
     :updated_at,
   )
 
   custom_attributes :full_name, :recruiter_name, :recruiter_email, :level, :housing,
-                     :role, :agreement_completed, :agreement_signed, :documents_sent_count, :deliveries
+                     :role, :agreement_completed, :agreement_signed, :agreement_status,
+                     :rep_signed, :documents_sent_count, :deliveries
 
   def full_name object
     object.full_name
@@ -57,7 +59,18 @@ class RepNormalizer < ::BaseResponseNormalizer
   end
 
   def agreement_signed object
-    agreement_deliveries(object).any? { |delivery| delivery.status == "completed" }
+    agreement_status(object) == "completed"
+  end
+
+  def agreement_status object
+    deliveries = rep_agreement_deliveries(object)
+    return "not_sent" if deliveries.empty?
+
+    deliveries.max_by { |delivery| DocumentDelivery::STATUS_RANK.fetch(delivery.status, 0) }.status
+  end
+
+  def rep_signed object
+    %w[awaiting_corporate_signature completed].include? agreement_status(object)
   end
 
   def documents_sent_count object
@@ -67,6 +80,12 @@ class RepNormalizer < ::BaseResponseNormalizer
   def agreement_deliveries object
     object.document_deliveries.to_a.select do |delivery|
       delivery.onboarding_document&.agreement?
+    end
+  end
+
+  def rep_agreement_deliveries object
+    object.document_deliveries.to_a.select do |delivery|
+      delivery.onboarding_document&.rep_agreement?
     end
   end
 
